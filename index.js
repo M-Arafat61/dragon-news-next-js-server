@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 8000;
 
@@ -32,9 +32,29 @@ async function run() {
       const news = await newsCollection.find().toArray();
       res.send({ status: true, message: "success", data: news });
     });
+
+    app.get("/news/id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const news = await newsCollection.findOne(query);
+      res.send(news);
+    });
     app.get("/categories", async (req, res) => {
       const categories = await categoriesCollection.find().toArray();
       res.send({ status: true, message: "success", data: categories });
+    });
+
+    app.get("/news", async (req, res) => {
+      const category = req.query.category;
+      let newses;
+      if (category === "all-news") {
+        newses = await newsCollection.find().toArray();
+      } else {
+        newses = await newsCollection
+          .find({ category: { $regex: category, $options: "i" } })
+          .toArray();
+      }
+      res.json({ status: true, message: "success", data: newses });
     });
 
     await client.db("admin").command({ ping: 1 });
